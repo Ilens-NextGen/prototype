@@ -73,9 +73,18 @@ function Microphone() {
           <Card.Text>
             <p>Device: Microphone</p>
           </Card.Text>
-          <button class="mic" disabled={micDisabled} onMouseDown={() => {
+          <button class="mic" disabled={micDisabled}
+          onMouseDown={() => {
             !micDisabled && setActive(true);
           }} onMouseUp={() => {
+            !micDisabled && setActive(false);
+          }} onMouseLeave={() => {
+            !micDisabled && setActive(false);
+          }} onTouchStart={() => {
+            !micDisabled && setActive(true);
+          }} onTouchEnd={() => {
+            !micDisabled && setActive(false);
+          }} onTouchCancel={() => {
             !micDisabled && setActive(false);
           }}>
             <div className="pulse-ring"></div>

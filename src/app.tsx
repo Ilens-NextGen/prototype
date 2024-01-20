@@ -49,9 +49,9 @@ function Microphone() {
 
   useEffect(() => {
     if (blob) {
-      console.log(blob);
-      const audio = new Audio(URL.createObjectURL(blob));
-      audio.play();
+      // console.log(blob);
+      // const audio = new Audio(URL.createObjectURL(blob));
+      // audio.play();
       capture(webcamStream as MediaStream, 1000).then((clip) => {
         setClip(clip);
       });

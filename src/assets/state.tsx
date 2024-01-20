@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import { grabClip } from '../utils';
 import { RecognitionInfo } from '../types';
 import socket from './client';
+import noAudio from "./no-audio.wav";
+import longAudio from "./long-query.wav";
+import shortAudio from "./short-query.wav";
 
 type SelectedCamState = {
     deviceId: string | null;
@@ -106,12 +109,31 @@ export const useObstacleDetection = create<ObjectRecognitionState>((set) => {
 export const useMicRecorder = create<MicRecorderState>((set) => {
     socket.on("audio", (buffer: ArrayBuffer) => {
         console.log("Got audio");
-        console.log(buffer);
+        // console.log(buffer);
         const blob = new Blob([buffer], { type: "audio/wav" });
         const url = URL.createObjectURL(blob);
         const audio = new Audio(url);
         audio.play();
     });
+
+    socket.on("no-audio", () => {
+        console.log("No audio");
+        const audio = new Audio(noAudio);
+        audio.play();
+    });
+
+    socket.on("long-audio", () => {
+        console.log("Long audio");
+        const audio = new Audio(longAudio);
+        audio.play();
+    });
+
+    socket.on("short-audio", () => {
+        console.log("Short audio");
+        const audio = new Audio(shortAudio);
+        audio.play();
+    });
+
 
     return {
         recorder: null,

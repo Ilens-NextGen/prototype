@@ -1,5 +1,5 @@
 export function grabClip(stream: MediaStream, duration: number) {
-    return new Promise < Blob > ((resolve, reject) => {
+    return new Promise<Blob>((resolve, reject) => {
         const recorder = new MediaRecorder(stream);
         const chunks: Blob[] = [];
         recorder.ondataavailable = (ev) => {
@@ -54,5 +54,32 @@ export async function recordMicrophone() {
     recorder.onstop = () => {
         console.log("Stopped recording audio");
     }
-    return {start, stop};
+    return { start, stop };
+}
+
+
+export function getImageLightness(src: HTMLVideoElement | HTMLImageElement) {
+    var colorSum = 0;
+    // create canvas
+    var canvas = document.createElement("canvas");
+    canvas.width = src.width;
+    canvas.height = src.height;
+
+    var ctx = (canvas.getContext("2d") as CanvasRenderingContext2D);
+    ctx.drawImage(src, 0, 0);
+    var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    var data = imageData.data;
+    var r, g, b, avg;
+
+    for (var x = 0, len = data.length; x < len; x += 4) {
+        r = data[x];
+        g = data[x + 1];
+        b = data[x + 2];
+
+        avg = Math.floor((r + g + b) / 3);
+        colorSum += avg;
+    }
+
+    var brightness = Math.floor(colorSum / (src.width * src.height));
+    return brightness;
 }

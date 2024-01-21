@@ -22,7 +22,7 @@ type MediaStreamState = {
 type WebCamCaptureState = {
     captured: Blob | null;
     capturing: boolean;
-    capture: (stream: MediaStream, duration: number) => Promise<Blob>;
+    capture: (stream: MediaStream, duration: number, flash?: FlashlightState) => Promise<Blob>;
     clearCapture: () => void;
 }
 
@@ -43,6 +43,15 @@ type MicRecorderState = {
     clear: () => void;
 }
 
+type FlashlightState = {
+    on: boolean;
+    stream: MediaStream | null;
+    toggle: () => void;
+    switch(on: boolean): void;
+    setStream: (stream: MediaStream | null) => void;
+}
+
+
 export const useSelectedCam = create<SelectedCamState>((set) => ({
     deviceId: null,
     label: "",
@@ -61,17 +70,21 @@ export const useWebcamStream = create<MediaStreamState>((set) => ({
     }),
 }));
 
-export const useWebcamCapture = create<WebCamCaptureState>((set) => ({
-    captured: null,
-    capturing: false,
-    capture: async (stream: MediaStream, duration: number) => {
-        set({ capturing: true });
-        const clip = await grabClip(stream, duration);
-        set({ captured: clip, capturing: false });
-        return clip;
-    },
-    clearCapture: () => set({ captured: null, capturing: false }),
-}));
+export const useWebcamCapture = create<WebCamCaptureState>((set) => {
+    return {
+        captured: null,
+        capturing: false,
+        capture: async (stream: MediaStream, duration: number, flash?: FlashlightState) => {
+            flash?.switch(true);
+            set({ capturing: true });
+            const clip = await grabClip(stream, duration);
+            set({ captured: clip, capturing: false });
+            flash?.switch(false);
+            return clip;
+        },
+        clearCapture: () => set({ captured: null, capturing: false }),
+    }
+});
 
 
 export const useObjectSearch = create<ObjectRecognitionState>((set) => {
@@ -179,6 +192,40 @@ export const useMicRecorder = create<MicRecorderState>((set) => {
                 state.recorder.stop();
             }
             return { recorder: null, recording: false, blob: null };
+        }),
+    }
+});
+
+export const useFlashlight = create<FlashlightState>((set) => {
+    
+    return {
+        on: false,
+        stream: null,
+        toggle: () => set((state: FlashlightState) => {
+            state.switch(!state.on);
+            return { on: !state.on };
+        }),
+        switch: (on: boolean) => set((state: FlashlightState) => {
+            const stream = state.stream;
+            if (!stream || on === state.on) {
+                console.log(`Flashlight: ${!stream ? "No stream" : "Already on"}`)
+                return { };
+            }
+            const track = stream.getVideoTracks()[0];
+            const capabilities = track.getCapabilities();
+            if (!capabilities.hasOwnProperty("torch")) {
+                console.warn("Flashlight: No torch capability");
+                return { on: false };
+            }
+            track.applyConstraints({
+                // @ts-ignore
+                advanced: [{torch: on}]
+            });
+            console.log(`Flashlight: ${on ? "On" : "Off"}`);
+            return { on };
+        }),
+        setStream: (stream: MediaStream | null) => set(() => {
+            return { stream };
         }),
     }
 });

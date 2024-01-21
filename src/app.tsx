@@ -1,7 +1,7 @@
 import './app.css'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Ref, useEffect, useRef, useState } from "preact/hooks";
-import { useMicRecorder, useObjectSearch, useObstacleDetection, useSelectedCam, useWebcamCapture, useWebcamStream } from "./assets/state";
+import { useFlashlight, useMicRecorder, useObjectSearch, useObstacleDetection, useSelectedCam, useWebcamCapture, useWebcamStream } from "./assets/state";
 import { Button, Card, Col, Container, Row, Table } from "react-bootstrap";
 import { AiFillAlert } from "react-icons/ai";
 import { FaMicrophone, FaSearch } from "react-icons/fa";
@@ -138,10 +138,12 @@ function WebCamStream(props: { deviceId: string | null, label: string, clearDevi
   const { deviceId, label, clearDevice } = props;
   const videoRef = useRef<HTMLVideoElement>(null);
   const { setStream, stream } = useWebcamStream();
+  const flash = useFlashlight();
   const { capturing, capture } = useWebcamCapture();
   const [searching, search] = useObjectSearch((state) => [state.running, state.run]);
   const [detecting, detect] = useObstacleDetection((state) => [state.running, state.run]);
   const disableBtn = capturing || searching || detecting || !stream;
+  flash.setStream(stream);
 
   useEffect(() => {
     if (!(deviceId && videoRef.current)) {
@@ -173,7 +175,7 @@ function WebCamStream(props: { deviceId: string | null, label: string, clearDevi
         <Card.Footer>
           <Button variant="danger" disabled={disableBtn} onClick={() => {
             if (stream) {
-              capture(stream, 1111).then((clip) => {
+              capture(stream, 1111, flash).then((clip) => {
                 detect(clip);
                 props.onDetect();
               });

@@ -43,6 +43,19 @@ type MicRecorderState = {
     clear: () => void;
 }
 
+// interface PlaybackBufferState {
+//     buffer: any[] | null;
+// }
+
+// const audioContext = new AudioContext();
+// const audioQueue = [];
+// const audioData = new ArrayBuffer(0);
+// const audioBuffer = await audioContext.decodeAudioData(audioData);
+// audioQueue.push(audioBuffer);
+// if (audioContext.state === "suspended") {
+//     pl
+
+
 export const useSelectedCam = create<SelectedCamState>((set) => ({
     deviceId: null,
     label: "",
@@ -79,7 +92,7 @@ export const useObjectSearch = create<ObjectRecognitionState>((set) => {
         console.log(objects);
         set({ objects, running: false });
     });
-    return { 
+    return {
         objects: [],
         running: false,
         run: async (clip: Blob) => {
@@ -91,9 +104,11 @@ export const useObjectSearch = create<ObjectRecognitionState>((set) => {
 });
 
 export const useObstacleDetection = create<ObjectRecognitionState>((set) => {
-    socket.on("detection", (objects: RecognitionInfo[]) => {
-        console.log(objects);
-        set({ objects, running: false });
+    socket.on("detection", (sentence: string) => {
+        let utterance = new SpeechSynthesisUtterance(sentence);
+        console.log(sentence);
+        speechSynthesis.speak(utterance);
+        set({ running: false });
     });
     return {
         objects: [],
@@ -112,6 +127,12 @@ export const useMicRecorder = create<MicRecorderState>((set) => {
         // console.log(buffer);
         const blob = new Blob([buffer], { type: "audio/wav" });
         const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audio.play();
+    });
+
+    socket.on("audio-url", (url: string) => {
+        console.log("Got url");
         const audio = new Audio(url);
         audio.play();
     });

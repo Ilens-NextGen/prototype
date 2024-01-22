@@ -61,7 +61,7 @@ function Microphone() {
   useEffect(() => {
     if (clip && blob) {
       console.log("Sending query");
-      socket.emit("query", blob, clip);
+      socket.emit("query", blob, clip, "url");
     }
   }, [clip]);
 
@@ -296,6 +296,45 @@ function ObstacleSearch(props: { recognitions: RecognitionInfo[], ref: Ref<HTMLD
     </Col>
   )
 }
+
+function AudioPlayer() {
+  const audioContextRef = useRef(new AudioContext());
+  const audioQueueRef = useRef(new Array<AudioBuffer>());
+
+  useEffect(() => {
+    socket.on('audio-chunk', async (audioChunk: ArrayBuffer) => {
+      console.log("Got audio chunk", audioChunk);
+      if (audioChunk.byteLength === 0) {
+        console.log("Stopping audio");
+        audioQueueRef.current = [];
+        audioContextRef.current.suspend();
+        return;
+      }
+      const audioBuffer = await audioContextRef.current.decodeAudioData(audioChunk);
+      audioQueueRef.current.push(audioBuffer);
+
+      if (audioContextRef.current.state === 'suspended') {
+        playAudioQueue()
+      }
+    });
+  }, []);
+
+  const playAudioQueue = () => {
+    if (audioQueueRef.current.length === 0) {
+      return;
+    }
+
+    const source = audioContextRef.current.createBufferSource();
+    source.buffer = audioQueueRef.current.shift() as AudioBuffer;
+    source.connect(audioContextRef.current.destination);
+    source.start();
+
+    source.onended = playAudioQueue;
+  };
+
+  return null;
+}
+
 
 export function App() {
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
